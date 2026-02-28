@@ -1,0 +1,6 @@
+@AuraStay.Api_HostAddress = http://localhost:5155
+
+GET {{AuraStay.Api_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###

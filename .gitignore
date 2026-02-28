@@ -1,0 +1,16 @@
+﻿## [DotNet / Visual Studio]
+bin/
+obj/
+.vs/
+*.vsdx
+*.bin
+*.user
+*.suo
+*.userosscache
+
+## [JetBrains Rider]
+.idea/
+*.sln.iml
+
+## [Database / Config]
+appsettings.Development.json
