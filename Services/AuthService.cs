@@ -1,7 +1,8 @@
-﻿using System.IdentityModel.Tokens.Jwt;
+using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using System.Security.Cryptography;
 using System.Text;
+using AuraStay.Api.Constants;
 using AuraStay.Api.Data;
 using AuraStay.Api.Entities;
 using AuraStay.Api.Models;
@@ -13,40 +14,43 @@ namespace AuraStay.Api.Services;
 
 public class AuthService(AppDbContext context, IConfiguration configuration) : IAuthService
 {
-    public async Task<User?> RegisterAsync(UserDto request)
+    public async Task<User?> RegisterAsync(RegisterDto request)
     {
         if (await context.Users.AnyAsync(u => u.Username == request.Username))
-        {
             return null;
-        }
+        if (await context.Users.AnyAsync(u => u.Email == request.Email))
+            return null;
+        if (await context.Users.AnyAsync(u => u.Phone == request.Phone))
+            return null;
 
         var user = new User();
         var hashedPassword = new PasswordHasher<User>()
             .HashPassword(user, request.Password);
 
         user.Username = request.Username;
+        user.Email = request.Email;
+        user.Phone = request.Phone;
         user.PasswordHash = hashedPassword;
+        user.Role = UserRoles.Default;
 
         context.Users.Add(user);
         await context.SaveChangesAsync();
-        
+
         return user;
     }
 
-    public async Task<TokenResponseDto?> LoginAsync(UserDto request)
+    public async Task<TokenResponseDto?> LoginAsync(LoginDto request)
     {
-        var user = await context.Users.FirstOrDefaultAsync(u => u.Username == request.Username);
-        
+        var identifier = request.LoginIdentifier.Trim();
+        var user = await context.Users.FirstOrDefaultAsync(u =>
+            u.Username == identifier || u.Email == identifier || u.Phone == identifier);
+
         if (user is null)
-        {
             return null;
-        }
-        if(new PasswordHasher<User>().VerifyHashedPassword(user, user.PasswordHash, request.Password)
-           == PasswordVerificationResult.Failed)
-        {
+        if (new PasswordHasher<User>().VerifyHashedPassword(user, user.PasswordHash, request.Password)
+            == PasswordVerificationResult.Failed)
             return null;
-        }
-        
+
         return await CreateTokenResponse(user);
     }
 

@@ -1,6 +1,7 @@
-﻿using System.IdentityModel.Tokens.Jwt;
+using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using System.Text;
+using AuraStay.Api.Constants;
 using AuraStay.Api.Entities;
 using AuraStay.Api.Models;
 using AuraStay.Api.Services;
@@ -18,23 +19,23 @@ namespace AuraStay.Api.Controllers
     {
 
         [HttpPost("register")]
-        public async Task<ActionResult<User>> Register(UserDto request)
+        public async Task<ActionResult<User>> Register(RegisterDto request)
         {
             var user = await authService.RegisterAsync(request);
 
             if (user is null)
-                return BadRequest("Username already in use.");
-            
+                return BadRequest("Username, email or phone already in use.");
+
             return Ok(user);
         }
 
         [HttpPost("login")]
-        public async Task<ActionResult<TokenResponseDto>> Login(UserDto request)
+        public async Task<ActionResult<TokenResponseDto>> Login(LoginDto request)
         {
             var result = await authService.LoginAsync(request);
-            
+
             if (result is null)
-                return BadRequest("Username or password is incorrect.");
+                return BadRequest("Invalid username/email/phone or password.");
 
             return Ok(result);
         }
@@ -57,12 +58,18 @@ namespace AuraStay.Api.Controllers
             return Ok("You are authenticated!");
         }
         
-        [Authorize(Roles = "Admin")] //Roles = "Admin, SuperAdmin .... poti pune si mai multe"
+        [Authorize(Roles = $"{UserRoles.Admin},{UserRoles.SuperAdmin}")]
         [HttpGet("admin-only")]
         public IActionResult AdminOnlyEndpoint()
         {
-            
             return Ok("You are authenticated!");
+        }
+
+        [Authorize(Roles = UserRoles.SuperAdmin)]
+        [HttpGet("superadmin-only")]
+        public IActionResult SuperAdminOnlyEndpoint()
+        {
+            return Ok("SuperAdmin only.");
         }
     }
 }
